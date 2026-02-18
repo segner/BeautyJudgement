@@ -674,7 +674,6 @@ async function saveToFirebase(analysisResults) {
   for (const result of analysisResults) {
     await addDoc(collection(db, 'paintings'), {
       name: result.painting.name,
-      imageData: result.painting.dataUrl,
       criteria: result.criteria,
       overall: result.overall,
       createdAt: serverTimestamp()
@@ -732,7 +731,7 @@ window.renderGallery = function() {
     const div = document.createElement('div');
     div.className = 'gallery-item';
     div.innerHTML = `
-      <img class="gallery-img" src="${item.imageData}" alt="${esc(item.name)}">
+      <div style="width:100%;aspect-ratio:4/3;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--cream-dim);font-size:11px;letter-spacing:0.1em">— kein Bild —</div>
       <div class="gallery-info">
         <div class="gallery-overall" style="color:${color}">${item.overall}<span style="font-size:16px;color:var(--cream-dim)">/10</span></div>
         <div class="gallery-name">${esc(item.name)}</div>
@@ -754,7 +753,9 @@ window.openModal = function(id) {
   const item = galleryData.find(g => g.id === id);
   if (!item) return;
   document.getElementById('modalTitle').textContent = item.name;
-  document.getElementById('modalImg').src = item.imageData;
+  const modalImg = document.getElementById('modalImg');
+  modalImg.src = item.imageData || '';
+  modalImg.style.display = item.imageData ? '' : 'none';
   document.getElementById('modalOverall').textContent = item.overall;
   document.getElementById('modalOverall').style.color = SCORE_COLOR(item.overall);
 
