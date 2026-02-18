@@ -651,11 +651,17 @@ Sei präzise, kenntnisreich und differenziert. Vergib keine inflationären 10er.
       ]}]
     })
   });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || `HTTP ${response.status}`);
+  const rawText = await response.text();
+  let data;
+  try { data = JSON.parse(rawText); } catch(e) {
+    throw new Error('Ungültige Antwort vom Server: ' + rawText.slice(0, 300));
   }
-  const data = await response.json();
+  if (!response.ok || data.error) {
+    throw new Error(data.error?.message || 'HTTP ' + response.status + ': ' + rawText.slice(0,300));
+  }
+  if (!data.content) {
+    throw new Error('Unerwartetes Format: ' + JSON.stringify(data).slice(0, 300));
+  }
   const text = data.content.map(c => c.text || '').join('');
   const parsed = JSON.parse(text.replace(/```json\s*/g,'').replace(/```/g,'').trim());
   const scores = CRITERIA.map(c => parsed[c.key]?.score || 0);
