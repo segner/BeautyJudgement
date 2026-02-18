@@ -393,6 +393,11 @@
         <div class="section-label" style="margin-bottom:0">I. Gemälde hochladen</div>
         <div class="db-status loading" id="dbStatus">Verbinde…</div>
       </div>
+      <div style="margin-bottom:28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;color:var(--gold-dim);text-transform:uppercase;white-space:nowrap;">API Key</div>
+        <input id="apiKeyInput" type="password" placeholder="sk-ant-..." style="background:var(--card);border:1px solid var(--border);color:var(--cream);font-family:'Raleway',sans-serif;font-size:12px;padding:10px 16px;flex:1;max-width:400px;outline:none;letter-spacing:1px;" />
+        <span style="font-size:10px;color:var(--cream-dim);letter-spacing:1px;">Dein Anthropic API Key · wird nicht gespeichert</span>
+      </div>
       <div class="upload-grid" id="uploadGrid">
         <label class="upload-slot add-slot" id="addSlot" title="Gemälde hinzufügen">
           <div class="slot-icon">⊕</div>
@@ -631,9 +636,12 @@ async function analyzePainting(painting) {
 
 Sei präzise, kenntnisreich und differenziert. Vergib keine inflationären 10er.`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  if (!apiKey) throw new Error('Bitte zuerst den Anthropic API Key eingeben.');
+
+  const response = await fetch('https://anthropic-proxy.steffen-egner.workers.dev/', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
