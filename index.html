@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ästhetik Analyse — Gemäldebewertung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&family=Raleway:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0a08;
+    --surface: #141210;
+    --card: #1a1714;
+    --border: #2e2820;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --gold-dim: #6b5a2e;
+    --cream: #f0e8d8;
+    --cream-dim: #a09080;
+    --red: #8b2020;
+    --green: #2a6b4a;
+    --text: #e8ddd0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Raleway', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grain */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.5;
+  }
+
+  header {
+    text-align: center;
+    padding: 60px 20px 40px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .title-ornament {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 6px;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(38px, 6vw, 72px);
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: var(--cream);
+    line-height: 1.1;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--gold-light);
+  }
+
+  .subtitle {
+    margin-top: 12px;
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: var(--cream-dim);
+    text-transform: uppercase;
+  }
+
+  main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 50px 30px;
+  }
+
+  /* Upload zone */
+  .upload-section {
+    margin-bottom: 60px;
+  }
+
+  .section-label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 5px;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .upload-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .upload-slot {
+    aspect-ratio: 3/4;
+    border: 1px solid var(--border);
+    background: var(--card);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .upload-slot:hover {
+    border-color: var(--gold-dim);
+    transform: translateY(-2px);
+  }
+
+  .upload-slot.filled { cursor: default; }
+  .upload-slot.filled:hover { transform: none; border-color: var(--gold); }
+
+  .slot-icon {
+    font-size: 28px;
+    opacity: 0.3;
+    margin-bottom: 10px;
+  }
+
+  .slot-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--cream-dim);
+    text-transform: uppercase;
+  }
+
+  .slot-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+  }
+
+  .slot-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(12,10,8,0.85) 0%, transparent 50%);
+    display: flex;
+    align-items: flex-end;
+    padding: 12px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .upload-slot.filled:hover .slot-overlay { opacity: 1; }
+
+  .slot-name {
+    font-size: 11px;
+    color: var(--cream);
+    letter-spacing: 1px;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(139,32,32,0.8);
+    border: none;
+    color: white;
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 22px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .upload-slot.filled:hover .remove-btn { opacity: 1; }
+
+  .add-slot {
+    border-style: dashed;
+    border-color: var(--border);
+  }
+
+  input[type=file] { display: none; }
+
+  /* Action buttons */
+  .actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold-light);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    padding: 14px 36px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: color 0.3s;
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gold);
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+    z-index: -1;
+  }
+
+  .btn-primary:hover { color: var(--bg); }
+  .btn-primary:hover::before { transform: translateX(0); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary:disabled:hover { color: var(--gold-light); }
+  .btn-primary:disabled:hover::before { transform: translateX(-100%); }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--cream-dim);
+    font-family: 'Raleway', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 14px 24px;
+    cursor: pointer;
+    transition: border-color 0.3s, color 0.3s;
+  }
+
+  .btn-secondary:hover { border-color: var(--cream-dim); color: var(--cream); }
+
+  /* Loading */
+  .loading-bar {
+    height: 1px;
+    background: var(--border);
+    margin: 40px 0;
+    position: relative;
+    display: none;
+  }
+
+  .loading-bar.active { display: block; }
+
+  .loading-bar::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    animation: loading 1.8s ease-in-out infinite;
+  }
+
+  @keyframes loading {
+    0% { width: 0%; left: 0; }
+    50% { width: 70%; }
+    100% { width: 0%; left: 100%; }
+  }
+
+  .loading-text {
+    text-align: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--gold-dim);
+    font-size: 16px;
+    display: none;
+  }
+
+  .loading-text.active { display: block; }
+
+  /* Results table */
+  .results-section {
+    display: none;
+    animation: fadeIn 0.6s ease;
+  }
+
+  .results-section.visible { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .results-header {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .results-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 300;
+    color: var(--cream);
+  }
+
+  .divider {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* Criteria table */
+  .criteria-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 50px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+  }
+
+  thead th {
+    background: var(--surface);
+    padding: 16px 20px;
+    text-align: left;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    font-weight: 400;
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th.painting-col {
+    padding: 12px 16px;
+    text-align: center;
+  }
+
+  .th-painting-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .th-thumb {
+    width: 70px;
+    height: 90px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+  }
+
+  .th-paintname {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--cream);
+    letter-spacing: 0;
+    text-transform: none;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+
+  tbody tr:hover { background: var(--card); }
+
+  tbody tr:last-child { border-bottom: none; }
+
+  td {
+    padding: 18px 20px;
+    vertical-align: middle;
+  }
+
+  td.criterion-cell {
+    width: 200px;
+    min-width: 180px;
+  }
+
+  .criterion-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    font-style: italic;
+    color: var(--cream);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .criterion-desc {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--cream-dim);
+    text-transform: uppercase;
+  }
+
+  td.score-cell {
+    text-align: center;
+    padding: 18px 16px;
+  }
+
+  .score-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .score-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+  }
+
+  .score-bar-bg {
+    width: 80px;
+    height: 3px;
+    background: var(--border);
+    position: relative;
+  }
+
+  .score-bar-fill {
+    position: absolute;
+    left: 0; top: 0;
+    height: 100%;
+    transition: width 1s ease;
+  }
+
+  .score-note {
+    font-size: 10px;
+    color: var(--cream-dim);
+    max-width: 130px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .best-mark {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  /* Overall score row */
+  tr.overall-row { background: var(--surface); }
+
+  tr.overall-row:hover { background: #1e1b18; }
+
+  .overall-score {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 40px;
+    font-weight: 300;
+    line-height: 1;
+  }
+
+  .rank-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    margin-top: 6px;
+  }
+
+  .rank-1 { border: 1px solid var(--gold); color: var(--gold); }
+  .rank-2 { border: 1px solid #8a8a8a; color: #aaa; }
+  .rank-3 { border: 1px solid #8b5e2e; color: #b07a50; }
+  .rank-other { border: 1px solid var(--border); color: var(--cream-dim); }
+
+  /* Summary cards */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin-top: 40px;
+  }
+
+  .summary-card {
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 28px;
+    position: relative;
+  }
+
+  .summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+
+  .card-painting-header {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+
+  .card-thumb {
+    width: 60px;
+    height: 75px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .card-painting-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--cream);
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+
+  .card-overall {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--gold-dim);
+  }
+
+  .card-verdict {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--cream-dim);
+    line-height: 1.6;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+
+  /* Error msg */
+  .error-msg {
+    display: none;
+    color: #c97070;
+    font-size: 13px;
+    padding: 12px 18px;
+    border: 1px solid #4a2020;
+    background: #1a1010;
+    margin-top: 16px;
+  }
+
+  .error-msg.visible { display: block; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--gold-dim); }
+
+  @media (max-width: 600px) {
+    .upload-grid { grid-template-columns: repeat(2, 1fr); }
+    .actions { flex-direction: column; align-items: stretch; }
+    .btn-primary, .btn-secondary { text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-ornament">Kunstkritik · Ästhetische Analyse</div>
+  <h1>Gemälde<br><em>Bewertung</em></h1>
+  <p class="subtitle">KI-gestützte ästhetische Analyse & Vergleich</p>
+</header>
+
+<main>
+  <section class="upload-section">
+    <div class="section-label">I. Gemälde hochladen</div>
+    <div class="upload-grid" id="uploadGrid">
+      <label class="upload-slot add-slot" id="addSlot" title="Gemälde hinzufügen">
+        <div class="slot-icon">⊕</div>
+        <div class="slot-label">Gemälde laden</div>
+        <input type="file" id="fileInput" accept="image/*" multiple>
+      </label>
+    </div>
+    <div class="actions">
+      <button class="btn-primary" id="analyzeBtn" disabled>Analyse starten</button>
+      <button class="btn-secondary" id="clearBtn">Alles löschen</button>
+      <span style="color:var(--cream-dim);font-size:11px;letter-spacing:1px;">Min. 1 · Max. 8 Gemälde</span>
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+  </section>
+
+  <div class="loading-bar" id="loadingBar"></div>
+  <div class="loading-text" id="loadingText">Die Gemälde werden ästhetisch bewertet …</div>
+
+  <section class="results-section" id="results"></section>
+</main>
+
+<script>
+const CRITERIA = [
+  { key: 'komposition', name: 'Komposition', desc: 'Bildaufbau & Balance' },
+  { key: 'farbgebung', name: 'Farbgebung', desc: 'Harmonie & Palette' },
+  { key: 'technik', name: 'Technik', desc: 'Handwerk & Ausführung' },
+  { key: 'originalitaet', name: 'Originalität', desc: 'Kreativität & Eigenwilligkeit' },
+  { key: 'emotion', name: 'Emotionale Tiefe', desc: 'Stimmung & Wirkung' },
+  { key: 'licht', name: 'Licht & Schatten', desc: 'Helldunkel & Modellierung' },
+  { key: 'gesamteindruck', name: 'Gesamteindruck', desc: 'Ästhetische Wirkung' },
+];
+
+const SCORE_COLOR = (s) => {
+  if (s >= 8) return '#c9a84c';
+  if (s >= 6) return '#7a9e7a';
+  if (s >= 4) return '#9e9a7a';
+  return '#9e7a7a';
+};
+
+let paintings = []; // { id, name, dataUrl, base64, mimeType }
+let nextId = 1;
+
+const uploadGrid = document.getElementById('uploadGrid');
+const addSlot = document.getElementById('addSlot');
+const fileInput = document.getElementById('fileInput');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const clearBtn = document.getElementById('clearBtn');
+const loadingBar = document.getElementById('loadingBar');
+const loadingText = document.getElementById('loadingText');
+const results = document.getElementById('results');
+const errorMsg = document.getElementById('errorMsg');
+
+fileInput.addEventListener('change', e => {
+  const files = Array.from(e.target.files);
+  files.forEach(f => addPainting(f));
+  fileInput.value = '';
+});
+
+function addPainting(file) {
+  if (paintings.length >= 8) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    const base64 = dataUrl.split(',')[1];
+    const mimeType = file.type;
+    const id = nextId++;
+    const name = file.name.replace(/\.[^.]+$/, '');
+    paintings.push({ id, name, dataUrl, base64, mimeType });
+    renderSlots();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePainting(id) {
+  paintings = paintings.filter(p => p.id !== id);
+  renderSlots();
+}
+
+function renderSlots() {
+  // Remove all non-addSlot children
+  Array.from(uploadGrid.children).forEach(c => {
+    if (c.id !== 'addSlot') c.remove();
+  });
+
+  paintings.forEach(p => {
+    const slot = document.createElement('div');
+    slot.className = 'upload-slot filled';
+    slot.innerHTML = `
+      <img class="slot-img" src="${p.dataUrl}" alt="${p.name}">
+      <div class="slot-overlay"><span class="slot-name">${p.name}</span></div>
+      <button class="remove-btn" title="Entfernen">✕</button>
+    `;
+    slot.querySelector('.remove-btn').addEventListener('click', () => removePainting(p.id));
+    uploadGrid.insertBefore(slot, addSlot);
+  });
+
+  // Hide add slot if max reached
+  addSlot.style.display = paintings.length >= 8 ? 'none' : '';
+  analyzeBtn.disabled = paintings.length < 1;
+}
+
+clearBtn.addEventListener('click', () => {
+  paintings = [];
+  renderSlots();
+  results.classList.remove('visible');
+  results.innerHTML = '';
+  showError('');
+});
+
+analyzeBtn.addEventListener('click', runAnalysis);
+
+function showError(msg) {
+  errorMsg.textContent = msg;
+  errorMsg.classList.toggle('visible', !!msg);
+}
+
+async function runAnalysis() {
+  showError('');
+  if (paintings.length === 0) return;
+
+  analyzeBtn.disabled = true;
+  loadingBar.classList.add('active');
+  loadingText.classList.add('active');
+  results.classList.remove('visible');
+
+  try {
+    const analysisResults = await Promise.all(paintings.map(p => analyzePainting(p)));
+    renderResults(analysisResults);
+  } catch (err) {
+    showError('Fehler bei der Analyse: ' + err.message);
+  } finally {
+    loadingBar.classList.remove('active');
+    loadingText.classList.remove('active');
+    analyzeBtn.disabled = false;
+  }
+}
+
+async function analyzePainting(painting) {
+  const prompt = `Du bist ein renommierter Kunstkritiker und Ästhetiker. Analysiere dieses Gemälde nach folgenden Kriterien und antworte NUR mit einem validen JSON-Objekt ohne Markdown-Codeblöcke:
+
+{
+  "komposition": { "score": <1-10>, "note": "<prägnante Beurteilung, 1-2 Sätze>" },
+  "farbgebung": { "score": <1-10>, "note": "<prägnante Beurteilung, 1-2 Sätze>" },
+  "technik": { "score": <1-10>, "note": "<prägnante Beurteilung, 1-2 Sätze>" },
+  "originalitaet": { "score": <1-10>, "note": "<prägnante Beurteilung, 1-2 Sätze>" },
+  "emotion": { "score": <1-10>, "note": "<prägnante Beurteilung, 1-2 Sätze>" },
+  "licht": { "score": <1-10>, "note": "<prägnante Beurteilung, 1-2 Sätze>" },
+  "gesamteindruck": { "score": <1-10>, "note": "<prägnante Beurteilung, 1-2 Sätze>" },
+  "gesamturteil": "<Ein abschließendes, poetisches Urteil über das Werk in 2-3 Sätzen>"
+}
+
+Sei präzise, kenntnisreich und differenziert in deiner Bewertung. Vergib keine inflationären 10er.`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: { type: 'base64', media_type: painting.mimeType, data: painting.base64 }
+          },
+          { type: 'text', text: prompt }
+        ]
+      }]
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.content.map(c => c.text || '').join('');
+  const cleaned = text.replace(/```json\s*/g, '').replace(/```/g, '').trim();
+  const parsed = JSON.parse(cleaned);
+
+  // Compute weighted overall
+  const scores = CRITERIA.map(c => parsed[c.key]?.score || 0);
+  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+  return {
+    painting,
+    criteria: parsed,
+    overall: Math.round(avg * 10) / 10
+  };
+}
+
+function renderResults(data) {
+  // Sort by overall descending
+  const sorted = [...data].sort((a, b) => b.overall - a.overall);
+
+  let html = `
+    <div class="results-header">
+      <h2>Analyse&shy;ergebnis</h2>
+      <div class="divider"></div>
+    </div>
+    <div class="criteria-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Kriterium</th>
+          ${sorted.map(d => `
+            <th class="painting-col">
+              <div class="th-painting-inner">
+                <img class="th-thumb" src="${d.painting.dataUrl}" alt="">
+                <span class="th-paintname">${esc(d.painting.name)}</span>
+              </div>
+            </th>
+          `).join('')}
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  // Criteria rows
+  CRITERIA.forEach(crit => {
+    const scores = sorted.map(d => d.criteria[crit.key]?.score || 0);
+    const maxScore = Math.max(...scores);
+
+    html += `<tr>
+      <td class="criterion-cell">
+        <span class="criterion-name">${crit.name}</span>
+        <span class="criterion-desc">${crit.desc}</span>
+      </td>`;
+
+    sorted.forEach((d, i) => {
+      const s = d.criteria[crit.key]?.score || 0;
+      const note = d.criteria[crit.key]?.note || '';
+      const isBest = s === maxScore && scores.filter(x => x === maxScore).length === 1;
+      const color = SCORE_COLOR(s);
+      html += `
+        <td class="score-cell">
+          <div class="score-wrap">
+            <span class="score-number" style="color:${color}">${s}</span>
+            <div class="score-bar-bg">
+              <div class="score-bar-fill" style="width:${s * 10}%;background:${color}"></div>
+            </div>
+            ${isBest ? '<span class="best-mark">★ Bestes</span>' : ''}
+            <span class="score-note">${esc(note)}</span>
+          </div>
+        </td>`;
+    });
+
+    html += '</tr>';
+  });
+
+  // Overall row
+  html += `<tr class="overall-row">
+    <td class="criterion-cell">
+      <span class="criterion-name">Gesamtwertung</span>
+      <span class="criterion-desc">Gewichteter Durchschnitt</span>
+    </td>`;
+
+  sorted.forEach((d, i) => {
+    const rank = i + 1;
+    const rankLabel = rank === 1 ? 'I. Platz' : rank === 2 ? 'II. Platz' : rank === 3 ? 'III. Platz' : `${rank}. Platz`;
+    const rankClass = rank <= 3 ? `rank-${rank}` : 'rank-other';
+    const color = SCORE_COLOR(d.overall);
+    html += `
+      <td class="score-cell">
+        <div class="score-wrap">
+          <span class="overall-score" style="color:${color}">${d.overall}</span>
+          <div class="score-bar-bg">
+            <div class="score-bar-fill" style="width:${d.overall * 10}%;background:${color}"></div>
+          </div>
+          <span class="rank-badge ${rankClass}">${rankLabel}</span>
+        </div>
+      </td>`;
+  });
+
+  html += '</tr></tbody></table></div>';
+
+  // Summary cards
+  html += `<div class="section-label" style="margin-top:50px;margin-bottom:24px;">II. Ästhetische Urteile</div>
+  <div class="summary-grid">`;
+
+  sorted.forEach((d, i) => {
+    const rank = i + 1;
+    const rankClass = rank <= 3 ? `rank-${rank}` : 'rank-other';
+    html += `
+      <div class="summary-card">
+        <div class="card-painting-header">
+          <img class="card-thumb" src="${d.painting.dataUrl}" alt="">
+          <div>
+            <div class="card-painting-name">${esc(d.painting.name)}</div>
+            <div class="card-overall">Gesamtwertung: ${d.overall}/10</div>
+            <div style="margin-top:8px"><span class="rank-badge ${rankClass}" style="display:inline-block;">${rank === 1 ? 'I.' : rank === 2 ? 'II.' : rank === 3 ? 'III.' : rank + '.'} Platz</span></div>
+          </div>
+        </div>
+        <p class="card-verdict">${esc(d.criteria.gesamturteil || '')}</p>
+      </div>`;
+  });
+
+  html += '</div>';
+
+  results.innerHTML = html;
+  results.classList.add('visible');
+  results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
