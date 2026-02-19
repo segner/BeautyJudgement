@@ -543,15 +543,33 @@ fileInput.addEventListener('change', e => {
   fileInput.value = '';
 });
 
+function makeThumbnail(dataUrl, maxSize = 300) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.src = dataUrl;
+  });
+}
+
 function addPainting(file) {
   if (paintings.length >= 8) return;
   const reader = new FileReader();
-  reader.onload = ev => {
+  reader.onload = async ev => {
     const dataUrl = ev.target.result;
+    const thumbnail = await makeThumbnail(dataUrl);
     paintings.push({
       id: nextId++,
       name: file.name.replace(/\.[^.]+$/, ''),
       dataUrl,
+      thumbnail,
       base64: dataUrl.split(',')[1],
       mimeType: file.type
     });
@@ -674,6 +692,7 @@ async function saveToFirebase(analysisResults) {
   for (const result of analysisResults) {
     await addDoc(collection(db, 'paintings'), {
       name: result.painting.name,
+      thumbnail: result.painting.thumbnail || null,
       criteria: result.criteria,
       overall: result.overall,
       createdAt: serverTimestamp()
@@ -731,7 +750,7 @@ window.renderGallery = function() {
     const div = document.createElement('div');
     div.className = 'gallery-item';
     div.innerHTML = `
-      <div style="width:100%;aspect-ratio:4/3;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--cream-dim);font-size:11px;letter-spacing:0.1em">— kein Bild —</div>
+      ${item.thumbnail ? `<img class="gallery-img" src="${item.thumbnail}" alt="${esc(item.name)}" style="width:100%;aspect-ratio:4/3;object-fit:cover">` : `<div style="width:100%;aspect-ratio:4/3;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--cream-dim);font-size:11px;letter-spacing:0.1em">— kein Bild —</div>`}
       <div class="gallery-info">
         <div class="gallery-overall" style="color:${color}">${item.overall}<span style="font-size:16px;color:var(--cream-dim)">/10</span></div>
         <div class="gallery-name">${esc(item.name)}</div>
@@ -754,8 +773,8 @@ window.openModal = function(id) {
   if (!item) return;
   document.getElementById('modalTitle').textContent = item.name;
   const modalImg = document.getElementById('modalImg');
-  modalImg.src = item.imageData || '';
-  modalImg.style.display = item.imageData ? '' : 'none';
+  modalImg.src = item.thumbnail || '';
+  modalImg.style.display = item.thumbnail ? '' : 'none';
   document.getElementById('modalOverall').textContent = item.overall;
   document.getElementById('modalOverall').style.color = SCORE_COLOR(item.overall);
 
